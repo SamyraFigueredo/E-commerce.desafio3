@@ -15,17 +15,18 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Usuario {
+public class Produto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nome;
-    private String email;
-    private String senha;
-    private String tipo; // 'ADMIN', 'CLIENTE'
+    private String descricao;
+    private Double preco;
+    private Integer estoque;
+    private Boolean ativo;
 
-    @OneToMany(mappedBy = "usuario")
-    private List<Venda> vendas;
+    @OneToMany(mappedBy = "produto")
+    private List<itemVenda> itensVenda;
 }
