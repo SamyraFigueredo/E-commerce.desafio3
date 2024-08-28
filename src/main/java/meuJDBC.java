@@ -6,7 +6,6 @@ public class meuJDBC {
     public static void main(String[] args) {
         Connection obj = null;
         try {
-            // Estabelece a conexão com o banco de dados
             obj = DriverManager.getConnection(
                     "jdbc:mysql://127.0.0.1:3306/?user=root/ecommerce",
                     "root",
