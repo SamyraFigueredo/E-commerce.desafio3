@@ -21,7 +21,7 @@ public class Usuario {
     private String nome;
     private String email;
     private String senha;
-    private String tipo; // 'ADMIN', 'CLIENTE'
+    private String tipo; // 'ADMIN', 'USUARIO'
 
     @OneToMany(mappedBy = "usuario")
     private List<Venda> vendas;
