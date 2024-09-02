@@ -1,15 +1,14 @@
 package Desafio3.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table
+@Table(name = "venda")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,12 +18,10 @@ public class Venda {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime dataVenda;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
-    @OneToMany(mappedBy = "venda")
-    private List<itemVenda> itensVenda;
-
+    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<ItemVenda> itensVenda;
 }

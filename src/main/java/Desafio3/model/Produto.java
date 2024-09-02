@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table
+@Table(name = "produto")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,11 +19,18 @@ public class Produto {
     private Long id;
 
     private String nome;
+
     private String descricao;
+
     private Double preco;
+
     private Integer estoque;
+
     private Boolean ativo;
 
     @OneToMany(mappedBy = "produto")
-    private List<itemVenda> itensVenda;
+    private List<ItemVenda> itensVenda;
+
+    public void validar() {
+    }
 }
