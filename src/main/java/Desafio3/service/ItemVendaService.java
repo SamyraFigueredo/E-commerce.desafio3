@@ -1,11 +1,12 @@
 package Desafio3.service;
 
 import Desafio3.model.ItemVenda;
+import Desafio3.model.Produto;
 import Desafio3.repository.ItemVendaRepository;
+import Desafio3.repository.ProdutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -14,16 +15,25 @@ public class ItemVendaService {
     @Autowired
     private ItemVendaRepository itemVendaRepository;
 
-    public List<ItemVenda> listarItensVenda() {
-        return itemVendaRepository.findAll();
-    }
+    @Autowired
+    private ProdutoRepository produtoRepository;
 
-    public Optional<ItemVenda> buscarItemVendaPorId(Long id) {
-        return itemVendaRepository.findById(id);
-    }
+    public ItemVenda criarItemVenda(ItemVenda itemVenda) {
+        Produto produto = itemVenda.getProduto();
 
-    public ItemVenda salvarItemVenda(ItemVenda itemVenda) {
+        if (produto.getEstoque() < itemVenda.getQuantidade()) {
+            throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getNome());
+        }
+
+        itemVenda.setPrecoUnitario(produto.getPreco());
+        produto.setEstoque(produto.getEstoque() - itemVenda.getQuantidade());
+        produtoRepository.save(produto);
+
         return itemVendaRepository.save(itemVenda);
+    }
+
+    public Optional<ItemVenda> obterItemVendaPorId(Long id) {
+        return itemVendaRepository.findById(id);
     }
 
     public void deletarItemVenda(Long id) {

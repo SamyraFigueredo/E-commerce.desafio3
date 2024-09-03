@@ -3,57 +3,54 @@ package Desafio3.service;
 import Desafio3.model.Usuario;
 import Desafio3.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UsuarioService {
 
-    private final UsuarioRepository usuarioRepository;
-
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
-    }
+    private UsuarioRepository usuarioRepository;
 
-    public Usuario salvarUsuario(Usuario usuario) {
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public Usuario criarUsuario(Usuario usuario) {
+        // Hash da senha antes de salvar
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         return usuarioRepository.save(usuario);
-    }
-
-    public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
-        return usuarioRepository.findById(id)
-                .map(usuario -> {
-                    usuario.setNome(usuarioAtualizado.getNome());
-                    usuario.setEmail(usuarioAtualizado.getEmail());
-                    if (usuarioAtualizado.getSenha() != null && !usuarioAtualizado.getSenha().isEmpty()) {
-                        usuario.setSenha(usuarioAtualizado.getSenha());
-                    }
-                    return usuarioRepository.save(usuario);
-                })
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + id));
-    }
-
-    public void excluirUsuario(Long id) {
-        usuarioRepository.deleteById(id);
-    }
-
-    public Usuario buscarUsuarioPorId(Long id) {
-        return usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + id));
-    }
-
-    public Usuario buscarUsuarioPorEmail(String email) {
-        return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado com o email: " + email));
     }
 
     public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
     }
 
-    public boolean verificarCredenciais(String email, String senha) {
-        Usuario usuario = buscarUsuarioPorEmail(email);
-        return senha.equals(usuario.getSenha());
+    public Optional<Usuario> obterUsuarioPorId(Long id) {
+        return usuarioRepository.findById(id);
+    }
+
+    public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
+        Optional<Usuario> usuarioOptional = usuarioRepository.findById(id);
+        if (usuarioOptional.isPresent()) {
+            Usuario usuarioExistente = usuarioOptional.get();
+            usuarioExistente.setNome(usuarioAtualizado.getNome());
+            usuarioExistente.setEmail(usuarioAtualizado.getEmail());
+            usuarioExistente.setTipo(usuarioAtualizado.getTipo());
+
+            // Atualizar a senha se ela for alterada
+            if (usuarioAtualizado.getSenha() != null && !usuarioAtualizado.getSenha().isEmpty()) {
+                usuarioExistente.setSenha(passwordEncoder.encode(usuarioAtualizado.getSenha()));
+            }
+
+            return usuarioRepository.save(usuarioExistente);
+        } else {
+            throw new RuntimeException("Usuário não encontrado");
+        }
+    }
+
+    public void deletarUsuario(Long id) {
+        usuarioRepository.deleteById(id);
     }
 }

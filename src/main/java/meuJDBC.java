@@ -7,7 +7,7 @@ public class meuJDBC {
         Connection obj = null;
         try {
             obj = DriverManager.getConnection(
-                    "jdbc:mysql://127.0.0.1:3306/?user=root/ecommerce",
+                    "jdbc:mysql://127.0.0.1:3306/?user=root/ecommerce_d3",
                     "root",
                     ""
             );

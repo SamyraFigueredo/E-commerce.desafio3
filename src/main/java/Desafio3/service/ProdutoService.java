@@ -4,9 +4,8 @@ import Desafio3.model.Produto;
 import Desafio3.repository.ProdutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -16,45 +15,57 @@ public class ProdutoService {
     private ProdutoRepository produtoRepository;
 
     public Produto criarProduto(Produto produto) {
-        validarProduto(produto);
+        produto.validar();
         return produtoRepository.save(produto);
     }
 
-    public Produto buscarProdutoPorId(Long id) {
-        Optional<Produto> produto = produtoRepository.findById(id);
-        if (produto.isPresent()) {
-            return produto.get();
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado");
-        }
-    }
-
-    public Produto atualizarProduto(Long id, Produto produtoAtualizado) {
-        if (!produtoRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado");
-        }
-        produtoAtualizado.setId(id);
-        validarProduto(produtoAtualizado);
-        return produtoRepository.save(produtoAtualizado);
-    }
-
-    public void deletarProduto(Long id) {
-        if (!produtoRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado");
-        }
-        produtoRepository.deleteById(id);
-    }
-
-    public Iterable<Produto> listarProdutos() {
+    public List<Produto> listarProdutos() {
         return produtoRepository.findAll();
     }
 
-    private void validarProduto(Produto produto) {
-        if (produto.getPreco() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O preço do produto deve ser positivo");
+    public Optional<Produto> obterProdutoPorId(Long id) {
+        return produtoRepository.findById(id);
+    }
+
+    public Produto atualizarProduto(Long id, Produto produtoAtualizado) {
+        Optional<Produto> produtoOptional = produtoRepository.findById(id);
+        if (produtoOptional.isPresent()) {
+            Produto produtoExistente = produtoOptional.get();
+            produtoExistente.setNome(produtoAtualizado.getNome());
+            produtoExistente.setDescricao(produtoAtualizado.getDescricao());
+            produtoExistente.setPreco(produtoAtualizado.getPreco());
+            produtoExistente.setEstoque(produtoAtualizado.getEstoque());
+            produtoExistente.setAtivo(produtoAtualizado.getAtivo());
+            produtoExistente.validar();
+
+            return produtoRepository.save(produtoExistente);
+        } else {
+            throw new RuntimeException("Produto não encontrado");
         }
-        if (produto.getEstoque() < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O estoque do produto não pode ser negativo");
+    }
+
+    public void deletarProduto(Long id) {
+        Optional<Produto> produtoOptional = produtoRepository.findById(id);
+        if (produtoOptional.isPresent()) {
+            Produto produto = produtoOptional.get();
+            if (produto.getItensVenda().isEmpty()) {
+                produtoRepository.deleteById(id);
+            } else {
+                throw new RuntimeException("Produto já foi vendido e não pode ser deletado");
+            }
+        } else {
+            throw new RuntimeException("Produto não encontrado");
+        }
+    }
+
+    public void inativarProduto(Long id) {
+        Optional<Produto> produtoOptional = produtoRepository.findById(id);
+        if (produtoOptional.isPresent()) {
+            Produto produto = produtoOptional.get();
+            produto.setAtivo(false);
+            produtoRepository.save(produto);
+        } else {
+            throw new RuntimeException("Produto não encontrado");
         }
     }
 }

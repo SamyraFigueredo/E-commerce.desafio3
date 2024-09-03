@@ -3,11 +3,14 @@ package Desafio3.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "item_venda")
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class ItemVenda {
 
     @Id
@@ -27,4 +30,12 @@ public class ItemVenda {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venda_id", nullable = false)
     private Venda venda;
+
+    @Column(nullable = false)
+    private LocalDateTime dataItemVenda;
+
+    @PrePersist
+    public void prePersist() {
+        this.dataItemVenda = LocalDateTime.now();
+    }
 }

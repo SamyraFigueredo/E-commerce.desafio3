@@ -3,10 +3,10 @@ package Desafio3.controller;
 import Desafio3.model.Venda;
 import Desafio3.service.VendaService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -17,48 +17,30 @@ public class VendaController {
     private VendaService vendaService;
 
     @PostMapping
-    public ResponseEntity<?> criarVenda(@RequestBody Venda venda) {
+    public ResponseEntity<Venda> criarVenda(@RequestBody Venda venda) {
         try {
             Venda novaVenda = vendaService.criarVenda(venda);
-            return new ResponseEntity<>(novaVenda, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Erro ao criar venda: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> buscarVendaPorId(@PathVariable Long id) {
-        Optional<Venda> venda = vendaService.buscarVendaPorId(id);
-        if (venda.isPresent()) {
-            return ResponseEntity.ok(venda.get());
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Venda não encontrada.");
-        }
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarVenda(@PathVariable Long id, @RequestBody Venda vendaAtualizada) {
-        try {
-            Venda venda = vendaService.atualizarVenda(id, vendaAtualizada);
-            return ResponseEntity.ok(venda);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Erro ao atualizar venda: " + e.getMessage());
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletarVenda(@PathVariable Long id) {
-        try {
-            vendaService.deletarVenda(id);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Erro ao deletar venda: " + e.getMessage());
+            return ResponseEntity.ok(novaVenda);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
         }
     }
 
     @GetMapping
-    public ResponseEntity<Iterable<Venda>> listarVendas() {
-        Iterable<Venda> vendas = vendaService.listarVendas();
+    public ResponseEntity<List<Venda>> listarVendas() {
+        List<Venda> vendas = vendaService.listarVendas();
         return ResponseEntity.ok(vendas);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Venda> obterVendaPorId(@PathVariable Long id) {
+        Optional<Venda> venda = vendaService.obterVendaPorId(id);
+        return venda.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarVenda(@PathVariable Long id) {
+        vendaService.deletarVenda(id);
+        return ResponseEntity.noContent().build();
     }
 }
