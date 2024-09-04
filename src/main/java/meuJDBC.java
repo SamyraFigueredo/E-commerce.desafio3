@@ -9,7 +9,7 @@ public class meuJDBC {
             obj = DriverManager.getConnection(
                     "jdbc:mysql://127.0.0.1:3306/?user=root/ecommerce_d3",
                     "root",
-                    ""
+                    "78383924"
             );
             System.out.println("Conexão estabelecida com sucesso!");
 

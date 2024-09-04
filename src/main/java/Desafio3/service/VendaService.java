@@ -1,48 +1,66 @@
 package Desafio3.service;
 
+import Desafio3.model.ItemVenda;
 import Desafio3.model.Venda;
+import Desafio3.repository.ItemVendaRepository;
 import Desafio3.repository.VendaRepository;
-import Desafio3.repository.ProdutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@Transactional
 public class VendaService {
 
     @Autowired
     private VendaRepository vendaRepository;
 
     @Autowired
-    private ProdutoRepository produtoRepository;
+    private ItemVendaRepository itemVendaRepository;
 
     public Venda criarVenda(Venda venda) {
+        // Valida a venda
         venda.validar();
 
-        // Validação e atualização de estoque dos produtos
-        venda.getItensVenda().forEach(item -> {
-            var produto = item.getProduto();
-            if (produto.getEstoque() < item.getQuantidade()) {
-                throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getNome());
+        // Verificar preços dos itens
+        for (ItemVenda item : venda.getItensVenda()) {
+            if (item.getPrecoUnitario() == null) {
+                throw new IllegalArgumentException("O preço unitário do item não pode ser nulo.");
             }
-            produto.setEstoque(produto.getEstoque() - item.getQuantidade());
-            produtoRepository.save(produto);
-        });
+        }
 
+        // Persiste a venda e os itens
+        venda.getItensVenda().forEach(item -> item.setVenda(venda));
         return vendaRepository.save(venda);
+    }
+
+    public Venda salvarVenda(Venda venda) {
+        venda.validar();
+        return vendaRepository.save(venda);
+    }
+
+    public Venda obterVendaPorId(Long id) {
+        return vendaRepository.findById(id).orElseThrow(() -> new RuntimeException("Venda não encontrada"));
     }
 
     public List<Venda> listarVendas() {
         return vendaRepository.findAll();
     }
 
-    public Optional<Venda> obterVendaPorId(Long id) {
-        return vendaRepository.findById(id);
+    @Transactional
+    public Venda atualizarVenda(Long id, Venda vendaAtualizada) {
+        Venda vendaExistente = obterVendaPorId(id);
+        vendaExistente.setItensVenda(vendaAtualizada.getItensVenda());
+        vendaExistente.setUsuario(vendaAtualizada.getUsuario());
+        // Atualize outros campos conforme necessário
+        return vendaRepository.save(vendaExistente);
     }
 
+    @Transactional
     public void deletarVenda(Long id) {
-        vendaRepository.deleteById(id);
+        Venda venda = obterVendaPorId(id);
+        vendaRepository.delete(venda);
     }
 }

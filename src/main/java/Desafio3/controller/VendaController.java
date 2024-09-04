@@ -3,14 +3,14 @@ package Desafio3.controller;
 import Desafio3.model.Venda;
 import Desafio3.service.VendaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/vendas")
+@RequestMapping("api/vendas")
 public class VendaController {
 
     @Autowired
@@ -19,28 +19,47 @@ public class VendaController {
     @PostMapping
     public ResponseEntity<Venda> criarVenda(@RequestBody Venda venda) {
         try {
-            Venda novaVenda = vendaService.criarVenda(venda);
-            return ResponseEntity.ok(novaVenda);
+            venda.validar();
+            Venda vendaCriada = vendaService.salvarVenda(venda);
+            return new ResponseEntity<>(vendaCriada, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(null);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Venda> obterVenda(@PathVariable Long id) {
+        try {
+            Venda venda = vendaService.obterVendaPorId(id);
+            return new ResponseEntity<>(venda, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
 
     @GetMapping
     public ResponseEntity<List<Venda>> listarVendas() {
         List<Venda> vendas = vendaService.listarVendas();
-        return ResponseEntity.ok(vendas);
+        return new ResponseEntity<>(vendas, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Venda> obterVendaPorId(@PathVariable Long id) {
-        Optional<Venda> venda = vendaService.obterVendaPorId(id);
-        return venda.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    @PutMapping("/{id}")
+    public ResponseEntity<Venda> atualizarVenda(@PathVariable Long id, @RequestBody Venda venda) {
+        try {
+            Venda vendaAtualizada = vendaService.atualizarVenda(id, venda);
+            return new ResponseEntity<>(vendaAtualizada, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarVenda(@PathVariable Long id) {
-        vendaService.deletarVenda(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<HttpStatus> deletarVenda(@PathVariable Long id) {
+        try {
+            vendaService.deletarVenda(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }
