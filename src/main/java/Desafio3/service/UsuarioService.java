@@ -50,6 +50,18 @@ public class UsuarioService {
         }
     }
 
+    public boolean resetarSenha(Long id, String novaSenha) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            usuario.setSenha(passwordEncoder.encode(novaSenha)); // Encriptando a nova senha
+            usuarioRepository.save(usuario);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public void deletarUsuario(Long id) {
         usuarioRepository.deleteById(id);
     }

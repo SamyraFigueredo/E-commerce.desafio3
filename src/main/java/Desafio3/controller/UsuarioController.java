@@ -44,6 +44,29 @@ public class UsuarioController {
         }
     }
 
+    // Método para resetar a senha do usuário
+    @PostMapping("/{id}/reset-senha")
+    public ResponseEntity<String> resetarSenha(@PathVariable Long id, @RequestBody PasswordResetRequest request) {
+        boolean sucesso = usuarioService.resetarSenha(id, request.getNovaSenha());
+        if (sucesso) {
+            return ResponseEntity.ok("Senha alterada com sucesso!");
+        } else {
+            return ResponseEntity.badRequest().body("Usuário não encontrado ou erro ao alterar a senha!");
+        }
+    }
+
+    public static class PasswordResetRequest {
+        private String novaSenha;
+
+        public String getNovaSenha() {
+            return novaSenha;
+        }
+
+        public void setNovaSenha(String novaSenha) {
+            this.novaSenha = novaSenha;
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarUsuario(@PathVariable Long id) {
         try {
