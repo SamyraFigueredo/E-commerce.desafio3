@@ -31,6 +31,11 @@ public class Estoque {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
+    public enum TipoMovimentacao {
+        ENTRADA,
+        SAIDA
+    }
+
     @NotNull(message = "O tipo de movimentação é obrigatório")
     @Enumerated(EnumType.STRING)
     private TipoMovimentacao tipoMovimentacao;
