@@ -1,5 +1,3 @@
-package Desafio3.controller;
-
 import Desafio3.model.Produto;
 import Desafio3.service.ProdutoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +14,11 @@ public class ProdutoController {
     @Autowired
     private ProdutoService produtoService;
 
-
     @PostMapping
     public ResponseEntity<Produto> criarProduto(@RequestBody Produto produto) {
         Produto novoProduto = produtoService.criarProduto(produto);
         return ResponseEntity.ok(novoProduto);
     }
-
 
     @GetMapping
     public ResponseEntity<List<Produto>> listarProdutos() {
@@ -30,13 +26,11 @@ public class ProdutoController {
         return ResponseEntity.ok(produtos);
     }
 
-
     @GetMapping("/{id}")
     public ResponseEntity<Produto> obterProdutoPorId(@PathVariable Long id) {
         Optional<Produto> produto = produtoService.obterProdutoPorId(id);
         return produto.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody Produto produtoAtualizado) {
