@@ -2,7 +2,6 @@ package Desafio3.controller;
 
 import Desafio3.model.Venda;
 import Desafio3.service.VendaService;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/vendas")
+@RequestMapping("/vendas")
 public class VendaController {
 
     @Autowired
@@ -20,49 +19,46 @@ public class VendaController {
     @PostMapping
     public ResponseEntity<Venda> criarVenda(@RequestBody Venda venda) {
         try {
-            venda.validar();
-            Venda vendaCriada = vendaService.criarVenda(venda);
-            return new ResponseEntity<>(vendaCriada, HttpStatus.CREATED);
+            Venda novaVenda = vendaService.criarVenda(venda);
+            return ResponseEntity.status(HttpStatus.CREATED).body(novaVenda);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return ResponseEntity.badRequest().body(null);
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Venda> obterVenda(@PathVariable Long id) {
+    public ResponseEntity<Venda> buscarVendaPorId(@PathVariable Long id) {
         try {
-            Venda venda = vendaService.obterVendaPorId(id);
-            return new ResponseEntity<>(venda, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            Venda venda = vendaService.buscarVendaPorId(id);
+            return ResponseEntity.ok(venda);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @GetMapping
-    public ResponseEntity<List<Venda>> listarVendas() {
-        List<Venda> vendas = vendaService.listarVendas();
-        return new ResponseEntity<>(vendas, HttpStatus.OK);
-    }
-
     @PutMapping("/{id}")
-    public ResponseEntity<Venda> atualizarVenda(@PathVariable Long id, @RequestBody Venda venda) {
+    public ResponseEntity<Venda> atualizarVenda(@PathVariable Long id, @RequestBody Venda vendaAtualizada) {
         try {
-            Venda vendaAtualizada = vendaService.atualizarVenda(id, venda);
-            return ResponseEntity.ok(vendaAtualizada);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            Venda venda = vendaService.atualizarVenda(id, vendaAtualizada);
+            return ResponseEntity.ok(venda);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deletarVenda(@PathVariable Long id) {
+    public ResponseEntity<Void> deletarVenda(@PathVariable Long id) {
         try {
             vendaService.deletarVenda(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Venda>> listarVendas() {
+        List<Venda> vendas = vendaService.listarVendas();
+        return ResponseEntity.ok(vendas);
     }
 }

@@ -36,6 +36,7 @@ public class Venda {
         this.dataItemVenda = LocalDateTime.now();
     }
 
+    // Método de validação
     public void validar() {
         if (usuario == null || usuario.getId() == null) {
             throw new IllegalArgumentException("Usuário não pode ser nulo e deve ter um ID válido.");
@@ -53,7 +54,23 @@ public class Venda {
             if (item.getPrecoUnitario() == null || item.getPrecoUnitario() <= 0) {
                 throw new IllegalArgumentException("O preço unitário de cada item de venda deve ser maior que zero.");
             }
+            // Verificar se há estoque suficiente
+            if (item.getQuantidade() > item.getProduto().getEstoque()) {
+                throw new IllegalArgumentException("Estoque insuficiente para o produto: " + item.getProduto().getNome());
+            }
+        }
+    }
+
+    // Atualizar o estoque dos produtos após a venda
+    public void atualizarEstoque() {
+        for (ItemVenda item : itensVenda) {
+            Produto produto = item.getProduto();
+            if (produto != null) {
+                if (produto.getEstoque() < item.getQuantidade()) {
+                    throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getNome());
+                }
+                produto.setEstoque(produto.getEstoque() - item.getQuantidade());
+            }
         }
     }
 }
-
