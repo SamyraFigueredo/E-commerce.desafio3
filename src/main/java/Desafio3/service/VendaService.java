@@ -6,11 +6,18 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class VendaService {
 
     @Autowired
     private VendaRepository vendaRepository;
+
+    // Método para listar todas as vendas
+    public List<Venda> listarVendas() {
+        return vendaRepository.findAll();
+    }
 
     @Transactional
     public Venda criarVenda(Venda venda) {
