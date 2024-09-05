@@ -15,7 +15,7 @@
 	<description>Projeto de e-commerce com Spring Boot</description>
 
 	<properties>
-		<java.version>22</java.version> <!-- Atualizado para Java 22 -->
+		<java.version>22</java.version>
 	</properties>
 
 	<dependencies>
