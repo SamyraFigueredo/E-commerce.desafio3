@@ -31,7 +31,7 @@ public class EstoqueService {
     @Transactional
     public Estoque criar(Estoque estoque) {
         Estoque estoqueCriado = estoqueRepository.save(estoque);
-        atualizarEstoqueDoProduto(estoque);
+        atualizarEstoqueDoProduto(estoqueCriado);
         return estoqueCriado;
     }
 
@@ -57,8 +57,8 @@ public class EstoqueService {
     private void atualizarEstoqueDoProduto(Estoque estoque) {
         Produto produto = estoque.getProduto();
         if (produto != null) {
-            estoque.atualizarEstoque();
-            produtoRepository.save(produto); 
+            produto.setEstoque(estoque.getQuantidade());
+            produtoRepository.save(produto);
         }
     }
 }

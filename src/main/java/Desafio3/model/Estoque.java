@@ -44,4 +44,11 @@ public class Estoque {
     public void prePersist() {
         this.dataMovimentacao = LocalDateTime.now();
     }
+
+
+    public void atualizarEstoque() {
+        if (produto != null) {
+            produto.setEstoque(quantidade);
+        }
+    }
 }
