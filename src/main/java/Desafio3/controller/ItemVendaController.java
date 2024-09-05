@@ -5,60 +5,64 @@ import Desafio3.service.ItemVendaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("api/item-vendas")
+@RequestMapping("/item-vendas")
+@Validated
 public class ItemVendaController {
 
     @Autowired
     private ItemVendaService itemVendaService;
 
-    @PostMapping
-    public ResponseEntity<ItemVenda> criarItemVenda(@RequestBody ItemVenda itemVenda) {
-        try {
-            ItemVenda novoItemVenda = itemVendaService.criarItemVenda(itemVenda);
-            return new ResponseEntity<>(novoItemVenda, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
+    @GetMapping
+    public ResponseEntity<List<ItemVenda>> listarTodos() {
+        List<ItemVenda> itemVendas = itemVendaService.listarTodos();
+        return ResponseEntity.ok(itemVendas);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ItemVenda> obterItemVenda(@PathVariable Long id) {
+    public ResponseEntity<ItemVenda> encontrarPorId(@PathVariable Long id) {
+        Optional<ItemVenda> itemVenda = itemVendaService.encontrarPorId(id);
+        return itemVenda.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<ItemVenda> criar(@RequestBody @Validated ItemVenda itemVenda) {
         try {
-            ItemVenda itemVenda = itemVendaService.obterItemVendaPorId(id);
-            return new ResponseEntity<>(itemVenda, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            ItemVenda novoItemVenda = itemVendaService.salvar(itemVenda);
+            return ResponseEntity.status(HttpStatus.CREATED).body(novoItemVenda);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    @GetMapping
-    public ResponseEntity<List<ItemVenda>> listarItensVenda() {
-        List<ItemVenda> itensVenda = itemVendaService.listarItensVenda();
-        return new ResponseEntity<>(itensVenda, HttpStatus.OK);
-    }
-
     @PutMapping("/{id}")
-    public ResponseEntity<ItemVenda> atualizarItemVenda(@PathVariable Long id, @RequestBody ItemVenda itemVenda) {
+    public ResponseEntity<ItemVenda> atualizar(@PathVariable Long id, @RequestBody @Validated ItemVenda itemVenda) {
+        if (!itemVendaService.encontrarPorId(id).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
         try {
-            ItemVenda itemVendaAtualizado = itemVendaService.atualizarItemVenda(id, itemVenda);
-            return new ResponseEntity<>(itemVendaAtualizado, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            itemVenda.setId(id);
+            ItemVenda itemVendaAtualizado = itemVendaService.salvar(itemVenda);
+            return ResponseEntity.ok(itemVendaAtualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deletarItemVenda(@PathVariable Long id) {
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
         try {
-            itemVendaService.deletarItemVenda(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            itemVendaService.deletar(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ItemVendaService {
@@ -14,33 +15,29 @@ public class ItemVendaService {
     @Autowired
     private ItemVendaRepository itemVendaRepository;
 
-    @Transactional
-    public ItemVenda criarItemVenda(ItemVenda itemVenda) {
-        return itemVendaRepository.save(itemVenda);
-    }
-
-    public ItemVenda obterItemVendaPorId(Long id) {
-        return itemVendaRepository.findById(id).orElseThrow(() -> new RuntimeException("Item de venda não encontrado"));
-    }
-
-    public List<ItemVenda> listarItensVenda() {
+    public List<ItemVenda> listarTodos() {
         return itemVendaRepository.findAll();
     }
 
-    @Transactional
-    public ItemVenda atualizarItemVenda(Long id, ItemVenda itemVendaAtualizado) {
-        ItemVenda itemVendaExistente = obterItemVendaPorId(id);
-        itemVendaExistente.setPrecoUnitario(itemVendaAtualizado.getPrecoUnitario());
-        itemVendaExistente.setProduto(itemVendaAtualizado.getProduto());
-        itemVendaExistente.setQuantidade(itemVendaAtualizado.getQuantidade());
-        itemVendaExistente.setVenda(itemVendaAtualizado.getVenda());
-        // Atualize outros campos conforme necessário
-        return itemVendaRepository.save(itemVendaExistente);
+    public Optional<ItemVenda> encontrarPorId(Long id) {
+        return itemVendaRepository.findById(id);
     }
 
     @Transactional
-    public void deletarItemVenda(Long id) {
-        ItemVenda itemVenda = obterItemVendaPorId(id);
-        itemVendaRepository.delete(itemVenda);
+    public ItemVenda salvar(ItemVenda itemVenda) {
+        validarItemVenda(itemVenda);
+        return itemVendaRepository.save(itemVenda);
+    }
+
+    @Transactional
+    public void deletar(Long id) {
+        if (!itemVendaRepository.existsById(id)) {
+            throw new IllegalArgumentException("Item de venda com o ID fornecido não existe.");
+        }
+        itemVendaRepository.deleteById(id);
+    }
+
+    private void validarItemVenda(ItemVenda itemVenda) {
+        itemVenda.validar();
     }
 }
