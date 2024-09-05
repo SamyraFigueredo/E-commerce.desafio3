@@ -1,5 +1,6 @@
 package Desafio3.controller;
 
+import Desafio3.UsuarioNaoEncontradoException;
 import Desafio3.model.Usuario;
 import Desafio3.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -18,14 +20,18 @@ public class UsuarioController {
 
     @PostMapping
     public ResponseEntity<Usuario> criarUsuario(@RequestBody Usuario usuario) {
-        Usuario novoUsuario = usuarioService.criarUsuario(usuario);
-        return new ResponseEntity<>(novoUsuario, HttpStatus.CREATED);
+        try {
+            Usuario novoUsuario = usuarioService.criarUsuario(usuario);
+            return new ResponseEntity<>(novoUsuario, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> buscarUsuarioPorId(@PathVariable Long id) {
-        return usuarioService.buscarUsuarioPorId(id)
-                .map(usuario -> new ResponseEntity<>(usuario, HttpStatus.OK))
+        Optional<Usuario> usuario = usuarioService.buscarUsuarioPorId(id);
+        return usuario.map(u -> new ResponseEntity<>(u, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
@@ -40,8 +46,10 @@ public class UsuarioController {
         try {
             Usuario usuarioAtualizado = usuarioService.atualizarUsuario(id, usuario);
             return new ResponseEntity<>(usuarioAtualizado, HttpStatus.OK);
-        } catch (RuntimeException e) {
+        } catch (UsuarioNaoEncontradoException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -50,15 +58,21 @@ public class UsuarioController {
         try {
             usuarioService.deletarUsuario(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (RuntimeException e) {
+        } catch (UsuarioNaoEncontradoException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping("/autenticar")
-    public ResponseEntity<Boolean> autenticarUsuario(@RequestParam String email, @RequestParam String senha) {
+    public ResponseEntity<Void> autenticarUsuario(@RequestParam String email, @RequestParam String senha) {
         boolean autenticado = usuarioService.autenticarUsuario(email, senha);
-        return new ResponseEntity<>(autenticado, HttpStatus.OK);
+        if (autenticado) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
     }
 
     @PostMapping("/{id}/resetar-senha")
@@ -66,8 +80,10 @@ public class UsuarioController {
         try {
             usuarioService.redefinirSenha(id, novaSenha);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (RuntimeException e) {
+        } catch (UsuarioNaoEncontradoException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 }

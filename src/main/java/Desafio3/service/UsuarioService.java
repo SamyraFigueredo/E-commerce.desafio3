@@ -1,9 +1,9 @@
 package Desafio3.service;
 
+import Desafio3.UsuarioNaoEncontradoException;
 import Desafio3.model.Usuario;
 import Desafio3.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,48 +15,48 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
+    // Método para criar um novo usuário
     public Usuario criarUsuario(Usuario usuario) {
-        usuario.setSenha(usuario.getSenha()); // Criptografa a senha ao criar o usuário
         return usuarioRepository.save(usuario);
     }
 
-    public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-        usuario.setNome(usuarioAtualizado.getNome());
-        usuario.setEmail(usuarioAtualizado.getEmail());
-        usuario.setSenha(usuarioAtualizado.getSenha()); // Criptografa a senha ao atualizar
-        usuario.setTipo(usuarioAtualizado.getTipo());
-
-        return usuarioRepository.save(usuario);
-    }
-
-    public void deletarUsuario(Long id) {
-        usuarioRepository.deleteById(id);
-    }
-
-    public Optional<Usuario> buscarUsuarioPorEmail(String email) {
-        return usuarioRepository.findByEmail(email);
-    }
-
+    // Método para listar todos os usuários
     public List<Usuario> listarTodosUsuarios() {
         return usuarioRepository.findAll();
     }
 
-    public boolean autenticarUsuario(String email, String senha) {
-        Optional<Usuario> usuario = usuarioRepository.findByEmail(email);
-        return usuario.isPresent() && passwordEncoder.matches(senha, usuario.get().getSenha());
+    public Optional<Usuario> buscarUsuarioPorId(Long id) {
+        return usuarioRepository.findById(id);
     }
+
+    public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com id: " + id));
+        usuario.setNome(usuarioAtualizado.getNome());
+        usuario.setEmail(usuarioAtualizado.getEmail());
+        return usuarioRepository.save(usuario);
+    }
+
+    public void deletarUsuario(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com id: " + id));
+        usuarioRepository.delete(usuario);
+    }
+
+    public boolean autenticarUsuario(String email, String senha) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            return usuario.getSenha().equals(senha);
+        }
+        return false;
+    }
+
 
     public void redefinirSenha(Long id, String novaSenha) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-        usuario.setSenha(novaSenha); // Criptografa a nova senha
+                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com id: " + id));
+        usuario.setSenha(novaSenha);
         usuarioRepository.save(usuario);
     }
 }
