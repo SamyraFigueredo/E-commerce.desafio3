@@ -49,7 +49,12 @@ public class Produto {
 
     @PrePersist
     public void prePersist() {
-        this.dataItemVenda = LocalDateTime.now();
+        this.dataItemVenda = LocalDateTime.now(); // Define a data atual no momento da persistência
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.dataItemVenda = LocalDateTime.now(); // Atualiza a data no momento da atualização
     }
 
     // Método de validação
