@@ -23,6 +23,14 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    public int autenticar(String email, String senha) {
+        Usuario usuario = usuarioRepository.findByEmail(email);
+        if (usuario != null && usuario.getSenha().equals(senha)) {
+            return usuario.getTipo() == Usuario.TipoUsuario.ADMIN ? 1 : 0; // 1 para ADMIN, 0 para USER
+        }
+        return -1; // Retorna -1 se não encontrar usuário correspondente
+    }
+
     public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
     }
