@@ -38,9 +38,11 @@ public class Produto {
     @NotNull(message = "O status ativo do produto é obrigatório")
     private Boolean ativo;
 
-    @OneToMany(mappedBy = "produto")
+    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemVenda> itensVenda;
 
+    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Estoque> movimentacoesEstoque;  // Relacionamento um-para-muitos com Estoque
 
     @Column(nullable = false)
     private LocalDateTime dataItemVenda;

@@ -10,11 +10,12 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/produtos")
+@RequestMapping("/produtos")
 public class ProdutoController {
 
     @Autowired
     private ProdutoService produtoService;
+
 
     @PostMapping
     public ResponseEntity<Produto> criarProduto(@RequestBody Produto produto) {
@@ -22,11 +23,13 @@ public class ProdutoController {
         return ResponseEntity.ok(novoProduto);
     }
 
+
     @GetMapping
     public ResponseEntity<List<Produto>> listarProdutos() {
         List<Produto> produtos = produtoService.listarProdutos();
         return ResponseEntity.ok(produtos);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Produto> obterProdutoPorId(@PathVariable Long id) {
@@ -34,11 +37,12 @@ public class ProdutoController {
         return produto.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody Produto produto) {
+    public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody Produto produtoAtualizado) {
         try {
-            Produto produtoAtualizado = produtoService.atualizarProduto(id, produto);
-            return ResponseEntity.ok(produtoAtualizado);
+            Produto produto = produtoService.atualizarProduto(id, produtoAtualizado);
+            return ResponseEntity.ok(produto);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -50,7 +54,7 @@ public class ProdutoController {
             produtoService.deletarProduto(id);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().build();
         }
     }
 
@@ -59,6 +63,16 @@ public class ProdutoController {
         try {
             produtoService.inativarProduto(id);
             return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}/estoque")
+    public ResponseEntity<Integer> verificarEstoque(@PathVariable Long id) {
+        try {
+            int estoque = produtoService.verificarEstoque(id);
+            return ResponseEntity.ok(estoque);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

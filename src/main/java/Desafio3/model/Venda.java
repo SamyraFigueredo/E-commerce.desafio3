@@ -1,15 +1,13 @@
 package Desafio3.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "venda")
@@ -27,6 +25,7 @@ public class Venda {
     private Usuario usuario;
 
     @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonIgnore
     private List<ItemVenda> itensVenda;
 
     @Column(nullable = false, updatable = false)
@@ -54,8 +53,6 @@ public class Venda {
             if (item.getPrecoUnitario() == null || item.getPrecoUnitario() <= 0) {
                 throw new IllegalArgumentException("O preço unitário de cada item de venda deve ser maior que zero.");
             }
-            // Defina a venda para o item
-            item.setVenda(this);
         }
     }
 }

@@ -68,4 +68,15 @@ public class ProdutoService {
             throw new RuntimeException("Produto não encontrado");
         }
     }
+
+
+    public int verificarEstoque(Long id) {
+        Optional<Produto> produtoOptional = produtoRepository.findById(id);
+        if (produtoOptional.isPresent()) {
+            Produto produto = produtoOptional.get();
+            return produto.getEstoque();
+        } else {
+            throw new RuntimeException("Produto não encontrado");
+        }
+    }
 }

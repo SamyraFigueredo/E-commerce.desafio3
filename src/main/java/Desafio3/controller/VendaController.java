@@ -2,6 +2,7 @@ package Desafio3.controller;
 
 import Desafio3.model.Venda;
 import Desafio3.service.VendaService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class VendaController {
     public ResponseEntity<Venda> criarVenda(@RequestBody Venda venda) {
         try {
             venda.validar();
-            Venda vendaCriada = vendaService.salvarVenda(venda);
+            Venda vendaCriada = vendaService.criarVenda(venda);
             return new ResponseEntity<>(vendaCriada, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -47,9 +48,11 @@ public class VendaController {
     public ResponseEntity<Venda> atualizarVenda(@PathVariable Long id, @RequestBody Venda venda) {
         try {
             Venda vendaAtualizada = vendaService.atualizarVenda(id, venda);
-            return new ResponseEntity<>(vendaAtualizada, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            return ResponseEntity.ok(vendaAtualizada);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
         }
     }
 
