@@ -15,62 +15,48 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     public Usuario criarUsuario(Usuario usuario) {
-        // Hash da senha antes de salvar
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        usuario.setSenha(usuario.getSenha()); // Criptografa a senha ao criar o usuário
         return usuarioRepository.save(usuario);
     }
 
-    public int autenticar(String email, String senha) {
-        Usuario usuario = usuarioRepository.findByEmail(email);
-        if (usuario != null && usuario.getSenha().equals(senha)) {
-            return usuario.getTipo() == Usuario.TipoUsuario.ADMIN ? 1 : 0; // 1 para ADMIN, 0 para USER
-        }
-        return -1; // Retorna -1 se não encontrar usuário correspondente
-    }
-
-    public List<Usuario> listarUsuarios() {
-        return usuarioRepository.findAll();
-    }
-
-    public Optional<Usuario> obterUsuarioPorId(Long id) {
-        return usuarioRepository.findById(id);
-    }
-
     public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
-        Optional<Usuario> usuarioOptional = usuarioRepository.findById(id);
-        if (usuarioOptional.isPresent()) {
-            Usuario usuarioExistente = usuarioOptional.get();
-            usuarioExistente.setNome(usuarioAtualizado.getNome());
-            usuarioExistente.setEmail(usuarioAtualizado.getEmail());
-            usuarioExistente.setTipo(usuarioAtualizado.getTipo());
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-            // Atualizar a senha se ela for alterada
-            if (usuarioAtualizado.getSenha() != null && !usuarioAtualizado.getSenha().isEmpty()) {
-                usuarioExistente.setSenha(passwordEncoder.encode(usuarioAtualizado.getSenha()));
-            }
+        usuario.setNome(usuarioAtualizado.getNome());
+        usuario.setEmail(usuarioAtualizado.getEmail());
+        usuario.setSenha(usuarioAtualizado.getSenha()); // Criptografa a senha ao atualizar
+        usuario.setTipo(usuarioAtualizado.getTipo());
 
-            return usuarioRepository.save(usuarioExistente);
-        } else {
-            throw new RuntimeException("Usuário não encontrado");
-        }
-    }
-
-    public boolean resetarSenha(Long id, String novaSenha) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            usuario.setSenha(passwordEncoder.encode(novaSenha)); // Encriptando a nova senha
-            usuarioRepository.save(usuario);
-            return true;
-        } else {
-            return false;
-        }
+        return usuarioRepository.save(usuario);
     }
 
     public void deletarUsuario(Long id) {
         usuarioRepository.deleteById(id);
+    }
+
+    public Optional<Usuario> buscarUsuarioPorEmail(String email) {
+        return usuarioRepository.findByEmail(email);
+    }
+
+    public List<Usuario> listarTodosUsuarios() {
+        return usuarioRepository.findAll();
+    }
+
+    public boolean autenticarUsuario(String email, String senha) {
+        Optional<Usuario> usuario = usuarioRepository.findByEmail(email);
+        return usuario.isPresent() && passwordEncoder.matches(senha, usuario.get().getSenha());
+    }
+
+    public void redefinirSenha(Long id, String novaSenha) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        usuario.setSenha(novaSenha); // Criptografa a nova senha
+        usuarioRepository.save(usuario);
     }
 }

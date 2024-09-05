@@ -3,14 +3,14 @@ package Desafio3.controller;
 import Desafio3.model.Usuario;
 import Desafio3.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/usuarios")
 public class UsuarioController {
 
     @Autowired
@@ -19,51 +19,29 @@ public class UsuarioController {
     @PostMapping
     public ResponseEntity<Usuario> criarUsuario(@RequestBody Usuario usuario) {
         Usuario novoUsuario = usuarioService.criarUsuario(usuario);
-        return ResponseEntity.ok(novoUsuario);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Usuario>> listarUsuarios() {
-        List<Usuario> usuarios = usuarioService.listarUsuarios();
-        return ResponseEntity.ok(usuarios);
+        return new ResponseEntity<>(novoUsuario, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> obterUsuarioPorId(@PathVariable Long id) {
-        Optional<Usuario> usuario = usuarioService.obterUsuarioPorId(id);
-        return usuario.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<Usuario> buscarUsuarioPorId(@PathVariable Long id) {
+        return usuarioService.buscarUsuarioPorId(id)
+                .map(usuario -> new ResponseEntity<>(usuario, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Usuario>> listarTodosUsuarios() {
+        List<Usuario> usuarios = usuarioService.listarTodosUsuarios();
+        return new ResponseEntity<>(usuarios, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Usuario> atualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
         try {
             Usuario usuarioAtualizado = usuarioService.atualizarUsuario(id, usuario);
-            return ResponseEntity.ok(usuarioAtualizado);
+            return new ResponseEntity<>(usuarioAtualizado, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Método para resetar a senha do usuário
-    @PostMapping("/{id}/reset-senha")
-    public ResponseEntity<String> resetarSenha(@PathVariable Long id, @RequestBody PasswordResetRequest request) {
-        boolean sucesso = usuarioService.resetarSenha(id, request.getNovaSenha());
-        if (sucesso) {
-            return ResponseEntity.ok("Senha alterada com sucesso!");
-        } else {
-            return ResponseEntity.badRequest().body("Usuário não encontrado ou erro ao alterar a senha!");
-        }
-    }
-
-    public static class PasswordResetRequest {
-        private String novaSenha;
-
-        public String getNovaSenha() {
-            return novaSenha;
-        }
-
-        public void setNovaSenha(String novaSenha) {
-            this.novaSenha = novaSenha;
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
@@ -71,9 +49,25 @@ public class UsuarioController {
     public ResponseEntity<Void> deletarUsuario(@PathVariable Long id) {
         try {
             usuarioService.deletarUsuario(id);
-            return ResponseEntity.noContent().build();
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PostMapping("/autenticar")
+    public ResponseEntity<Boolean> autenticarUsuario(@RequestParam String email, @RequestParam String senha) {
+        boolean autenticado = usuarioService.autenticarUsuario(email, senha);
+        return new ResponseEntity<>(autenticado, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/resetar-senha")
+    public ResponseEntity<Void> redefinirSenha(@PathVariable Long id, @RequestParam String novaSenha) {
+        try {
+            usuarioService.redefinirSenha(id, novaSenha);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 }

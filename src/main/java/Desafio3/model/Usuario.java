@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.List;
 
 @Entity
@@ -29,12 +28,11 @@ public class Usuario {
 
     @NotBlank
     @Column(nullable = false)
-    private String nome;
+    private String senha; // Armazenar senhas criptografadas
 
     @NotBlank
-    @Size(min = 8)
     @Column(nullable = false)
-    private String senha;
+    private String nome;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -48,13 +46,25 @@ public class Usuario {
         ADMIN, USER
     }
 
-    // autenticar o usuário
-    public static int autenticar(String email, String senha, List<Usuario> usuarios) {
+    // Método para criptografar e definir a senha
+    public void setSenha(String senha) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        this.senha = passwordEncoder.encode(senha);
+    }
+
+    // Método para verificar senhas criptografadas (pode ser movido para um serviço separado)
+    public static boolean autenticar(String email, String senha, List<Usuario> usuarios, BCryptPasswordEncoder passwordEncoder) {
         for (Usuario usuario : usuarios) {
-            if (usuario.getEmail().equals(email) && usuario.getSenha().equals(senha)) {
-                return usuario.getTipo() == TipoUsuario.ADMIN ? 1 : 0; // 1 para ADMIN, 0 para USER
+            if (usuario.getEmail().equals(email) && passwordEncoder.matches(senha, usuario.getSenha())) {
+                return usuario.getTipo() == TipoUsuario.ADMIN; // Retorna verdadeiro para ADMIN, falso para USER
             }
         }
-        return -1; // Retorna -1 se não encontrar usuário correspondente
+        return false; // Retorna falso se não encontrar usuário correspondente
+    }
+
+    // Método adicional para redefinir a senha (pode ser implementado via token em serviço)
+    public void resetarSenha(String novaSenha) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        this.senha = passwordEncoder.encode(novaSenha);
     }
 }
