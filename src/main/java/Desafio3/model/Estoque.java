@@ -31,28 +31,17 @@ public class Estoque {
     @JoinColumn(name = "produto_id", nullable = false)
     private Produto produto;
 
+    @NotNull(message = "O tipo de movimentação é obrigatório")
+    @Enumerated(EnumType.STRING)
+    private TipoMovimentacao tipoMovimentacao;
+
     public enum TipoMovimentacao {
         ENTRADA,
         SAIDA
     }
 
-    @NotNull(message = "O tipo de movimentação é obrigatório")
-    @Enumerated(EnumType.STRING)
-    private TipoMovimentacao tipoMovimentacao;
-
     @PrePersist
     public void prePersist() {
         this.dataMovimentacao = LocalDateTime.now();
-    }
-
-    public void atualizarEstoque() {
-        if (tipoMovimentacao == TipoMovimentacao.ENTRADA) {
-            produto.setEstoque(produto.getEstoque() + quantidade);
-        } else if (tipoMovimentacao == TipoMovimentacao.SAIDA) {
-            if (produto.getEstoque() < quantidade) {
-                throw new IllegalArgumentException("Estoque insuficiente para a saída");
-            }
-            produto.setEstoque(produto.getEstoque() - quantidade);
-        }
     }
 }

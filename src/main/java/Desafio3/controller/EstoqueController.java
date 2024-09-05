@@ -1,46 +1,59 @@
 package Desafio3.controller;
 
-import Desafio3.model.Produto;
+import Desafio3.model.Estoque;
 import Desafio3.service.EstoqueService;
-import Desafio3.service.ProdutoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Optional;
+
 @RestController
-@RequestMapping("/estoque")
+@RequestMapping("/api/estoques")
 public class EstoqueController {
 
     @Autowired
     private EstoqueService estoqueService;
 
-    @Autowired
-    private ProdutoService produtoService;
-
-    // Adicionar estoque a um produto
-    @PostMapping("/adicionar/{produtoId}/{quantidade}")
-    public ResponseEntity<String> adicionarEstoque(@PathVariable Long produtoId, @PathVariable int quantidade) {
-        Produto produto = produtoService.buscarPorId(produtoId)
-                .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado"));
-        estoqueService.adicionarEstoque(produto, quantidade);
-        return ResponseEntity.ok("Estoque adicionado com sucesso.");
+    @GetMapping
+    public ResponseEntity<List<Estoque>> listarTodos() {
+        List<Estoque> estoques = estoqueService.listarTodos();
+        return ResponseEntity.ok(estoques);
     }
 
-    // Verificar a quantidade de estoque de um produto
-    @GetMapping("/verificar/{produtoId}")
-    public ResponseEntity<Integer> verificarQuantidade(@PathVariable Long produtoId) {
-        Produto produto = produtoService.buscarPorId(produtoId)
-                .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado"));
-        int quantidade = estoqueService.verificarQuantidade(produto);
-        return ResponseEntity.ok(quantidade);
+    @GetMapping("/{id}")
+    public ResponseEntity<Estoque> buscarPorId(@PathVariable Long id) {
+        Optional<Estoque> estoque = estoqueService.buscarPorId(id);
+        return estoque.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Remover estoque de um produto
-    @PostMapping("/remover/{produtoId}/{quantidade}")
-    public ResponseEntity<String> removerEstoque(@PathVariable Long produtoId, @PathVariable int quantidade) {
-        Produto produto = produtoService.buscarPorId(produtoId)
-                .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado"));
-        estoqueService.removerEstoque(produto, quantidade);
-        return ResponseEntity.ok("Estoque removido com sucesso.");
+    @PostMapping
+    public ResponseEntity<Estoque> criar(@Valid @RequestBody Estoque estoque) {
+        Estoque estoqueCriado = estoqueService.criar(estoque);
+        return ResponseEntity.status(HttpStatus.CREATED).body(estoqueCriado);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Estoque> atualizar(@PathVariable Long id, @Valid @RequestBody Estoque estoque) {
+        try {
+            Estoque estoqueAtualizado = estoqueService.atualizar(id, estoque);
+            return ResponseEntity.ok(estoqueAtualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        try {
+            estoqueService.excluir(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

@@ -6,6 +6,7 @@ import Desafio3.repository.EstoqueRepository;
 import Desafio3.repository.ProdutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,69 +18,47 @@ public class EstoqueService {
     private EstoqueRepository estoqueRepository;
 
     @Autowired
-    private ProdutoService produtoService;
-
-    @Autowired
     private ProdutoRepository produtoRepository;
 
-    // Registrar uma movimentação de estoque
-    public Estoque registrarMovimentacao(Estoque estoque) {
-        Produto produto = estoque.getProduto();
-        estoque.atualizarEstoque();  // Atualiza o estoque do produto com base no tipo de movimentação
-        produtoService.atualizarProduto(produto);  // Atualiza o produto no banco de dados
-        return estoqueRepository.save(estoque);  // Salva a movimentação de estoque
-    }
-
-    // Listar todas as movimentações de estoque
-    public List<Estoque> listarMovimentacoes() {
+    public List<Estoque> listarTodos() {
         return estoqueRepository.findAll();
     }
 
-    // Buscar movimentação de estoque por ID
-    public Optional<Estoque> buscarMovimentacaoPorId(Long id) {
+    public Optional<Estoque> buscarPorId(Long id) {
         return estoqueRepository.findById(id);
     }
 
-    // Adicionar estoque a um produto
-    public void adicionarEstoque(Produto produto, int quantidade) {
-        if (quantidade <= 0) {
-            throw new IllegalArgumentException("A quantidade a ser adicionada deve ser maior que zero.");
-        }
-
-        produto.setEstoque(produto.getEstoque() + quantidade);
-        produtoRepository.save(produto);
-
-        // Registrar a movimentação no histórico de estoque
-        Estoque movimentacao = new Estoque();
-        movimentacao.setProduto(produto);
-        movimentacao.setQuantidade(quantidade);
-        movimentacao.setTipoMovimentacao(TipoMovimentacao.ENTRADA);
-        registrarMovimentacao(movimentacao);
+    @Transactional
+    public Estoque criar(Estoque estoque) {
+        Estoque estoqueCriado = estoqueRepository.save(estoque);
+        atualizarEstoqueDoProduto(estoque);
+        return estoqueCriado;
     }
 
-    // Verificar a quantidade de estoque disponível de um produto
-    public int verificarQuantidade(Produto produto) {
-        return produto.getEstoque();
+    @Transactional
+    public Estoque atualizar(Long id, Estoque estoqueAtualizado) {
+        Estoque estoque = estoqueRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Estoque não encontrado com id: " + id));
+        estoque.setQuantidade(estoqueAtualizado.getQuantidade());
+        estoque.setTipoMovimentacao(estoqueAtualizado.getTipoMovimentacao());
+        Estoque estoqueAtualizadoNoBanco = estoqueRepository.save(estoque);
+        atualizarEstoqueDoProduto(estoqueAtualizadoNoBanco);
+        return estoqueAtualizadoNoBanco;
     }
 
-    // Remover estoque de um produto
-    public void removerEstoque(Produto produto, int quantidade) {
-        if (quantidade <= 0) {
-            throw new IllegalArgumentException("A quantidade a ser removida deve ser maior que zero.");
+    @Transactional
+    public void excluir(Long id) {
+        Estoque estoque = estoqueRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Estoque não encontrado com id: " + id));
+        estoqueRepository.delete(estoque);
+        atualizarEstoqueDoProduto(estoque);
+    }
+
+    private void atualizarEstoqueDoProduto(Estoque estoque) {
+        Produto produto = estoque.getProduto();
+        if (produto != null) {
+            estoque.atualizarEstoque();
+            produtoRepository.save(produto); 
         }
-
-        if (produto.getEstoque() < quantidade) {
-            throw new IllegalArgumentException("Estoque insuficiente para a remoção.");
-        }
-
-        produto.setEstoque(produto.getEstoque() - quantidade);
-        produtoRepository.save(produto);
-
-        // Registrar a movimentação no histórico de estoque
-        Estoque movimentacao = new Estoque();
-        movimentacao.setProduto(produto);
-        movimentacao.setQuantidade(quantidade);
-        movimentacao.setTipoMovimentacao(TipoMovimentacao.SAIDA);
-        registrarMovimentacao(movimentacao);
     }
 }
