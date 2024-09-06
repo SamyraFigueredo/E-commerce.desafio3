@@ -28,7 +28,7 @@ public class Usuario {
 
     @NotBlank
     @Column(nullable = false)
-    private String senha; // Armazenar senhas criptografadas
+    private String senha;
 
     @NotBlank
     @Column(nullable = false)
@@ -46,23 +46,23 @@ public class Usuario {
         ADMIN, USER
     }
 
-    // Método para criptografar e definir a senha
+    private String autenticado;
+
     public void setSenha(String senha) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         this.senha = passwordEncoder.encode(senha);
     }
 
-    // Método para verificar senhas criptografadas (pode ser movido para um serviço separado)
+    // Método para verificar senhas criptografadas
     public static boolean autenticar(String email, String senha, List<Usuario> usuarios, BCryptPasswordEncoder passwordEncoder) {
         for (Usuario usuario : usuarios) {
             if (usuario.getEmail().equals(email) && passwordEncoder.matches(senha, usuario.getSenha())) {
                 return usuario.getTipo() == TipoUsuario.ADMIN; // Retorna verdadeiro para ADMIN, falso para USER
             }
         }
-        return false; // Retorna falso se não encontrar usuário correspondente
+        return false;
     }
 
-    // Método adicional para redefinir a senha (pode ser implementado via token em serviço)
     public void resetarSenha(String novaSenha) {
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         this.senha = passwordEncoder.encode(novaSenha);

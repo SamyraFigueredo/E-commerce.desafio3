@@ -6,6 +6,7 @@ import Desafio3.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -66,14 +67,21 @@ public class UsuarioController {
     }
 
     @PostMapping("/autenticar")
-    public ResponseEntity<Void> autenticarUsuario(@RequestParam String email, @RequestParam String senha) {
-        boolean autenticado = usuarioService.autenticarUsuario(email, senha);
-        if (autenticado) {
-            return new ResponseEntity<>(HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<String> autenticarUsuario(@RequestParam String email, @RequestParam String senha) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        Optional<Usuario> usuarioOpt = usuarioService.buscarPorEmail(email);
+
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            if (passwordEncoder.matches(senha, usuario.getSenha())) {
+                usuario.setAutenticado("sim");
+                usuarioService.criarUsuario(usuario);
+                return new ResponseEntity<>("Autenticação feita com sucesso", HttpStatus.OK);
+            }
         }
+        return new ResponseEntity<>("Autenticação falhou", HttpStatus.UNAUTHORIZED);
     }
+
 
     @PostMapping("/{id}/resetar-senha")
     public ResponseEntity<Void> redefinirSenha(@PathVariable Long id, @RequestParam String novaSenha) {

@@ -15,18 +15,20 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // Método para criar um novo usuário
     public Usuario criarUsuario(Usuario usuario) {
         return usuarioRepository.save(usuario);
     }
 
-    // Método para listar todos os usuários
     public List<Usuario> listarTodosUsuarios() {
         return usuarioRepository.findAll();
     }
 
     public Optional<Usuario> buscarUsuarioPorId(Long id) {
         return usuarioRepository.findById(id);
+    }
+
+    public Optional<Usuario> buscarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email);
     }
 
     public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
@@ -44,14 +46,17 @@ public class UsuarioService {
     }
 
     public boolean autenticarUsuario(String email, String senha) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            return usuario.getSenha().equals(senha);
+        Optional<Usuario> usuario = usuarioRepository.findByEmail(email);
+        if (usuario.isPresent()) {
+            Usuario u = usuario.get();
+            if (u.getSenha().equals(senha)) {
+                u.setAutenticado("sim");
+                usuarioRepository.save(u);
+                return true;
+            }
         }
         return false;
     }
-
 
     public void redefinirSenha(Long id, String novaSenha) {
         Usuario usuario = usuarioRepository.findById(id)
