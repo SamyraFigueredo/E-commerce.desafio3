@@ -48,16 +48,17 @@ public class ProdutoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    public ResponseEntity<String> excluir(@PathVariable Long id) {
         try {
             produtoService.excluir(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("O produto não pode ser excluído porque está associado a uma Venda.");
         }
     }
+
 
     @PatchMapping("/{id}/inativar")
     public ResponseEntity<Void> inativar(@PathVariable Long id) {
