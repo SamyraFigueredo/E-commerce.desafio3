@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,25 +40,26 @@ public class Produto {
     private Boolean ativo;
 
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<ItemVenda> itensVenda;
 
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Estoque> movimentacoesEstoque;  // Relacionamento um-para-muitos com Estoque
+    @JsonManagedReference
+    private List<Estoque> movimentacoesEstoque;
 
     @Column(nullable = false)
     private LocalDateTime dataItemVenda;
 
     @PrePersist
     public void prePersist() {
-        this.dataItemVenda = LocalDateTime.now(); // Define a data atual no momento da persistência
+        this.dataItemVenda = LocalDateTime.now();
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.dataItemVenda = LocalDateTime.now(); // Atualiza a data no momento da atualização
+        this.dataItemVenda = LocalDateTime.now();
     }
 
-    // Método de validação
     public void validar() {
         if (estoque < 0) {
             throw new IllegalArgumentException("O estoque não pode ser negativo");

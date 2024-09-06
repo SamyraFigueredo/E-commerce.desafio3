@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @Table(name = "item_venda")
@@ -28,6 +29,7 @@ public class ItemVenda {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produto_id", nullable = false)
     @NotNull(message = "O produto é obrigatório")
+    @JsonBackReference
     private Produto produto;
 
     @Column(nullable = false)
