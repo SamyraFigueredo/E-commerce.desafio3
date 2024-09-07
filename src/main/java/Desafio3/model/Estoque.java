@@ -47,10 +47,20 @@ public class Estoque {
         this.dataMovimentacao = LocalDateTime.now();
     }
 
-
+    // Atualiza o estoque do produto com base na movimentação
     public void atualizarEstoque() {
         if (produto != null) {
-            produto.setEstoque(quantidade);
+            switch (tipoMovimentacao) {
+                case ENTRADA:
+                    produto.setEstoque(produto.getEstoque() + quantidade);
+                    break;
+                case SAIDA:
+                    produto.setEstoque(produto.getEstoque() - quantidade);
+                    if (produto.getEstoque() < 0) {
+                        throw new IllegalArgumentException("Estoque não pode ser negativo após a saída.");
+                    }
+                    break;
+            }
         }
     }
 }

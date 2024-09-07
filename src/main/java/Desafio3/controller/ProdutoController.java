@@ -8,8 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/produtos")
@@ -18,47 +16,54 @@ public class ProdutoController {
     @Autowired
     private ProdutoService produtoService;
 
-    @GetMapping
-    public ResponseEntity<List<Produto>> listarTodos() {
-        List<Produto> produtos = produtoService.listarTodos();
-        return ResponseEntity.ok(produtos);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Produto> buscarPorId(@PathVariable Long id) {
-        Optional<Produto> produto = produtoService.buscarPorId(id);
-        return produto.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
+    // Criar um novo produto
     @PostMapping
-    public ResponseEntity<Produto> criar(@Valid @RequestBody Produto produto) {
-        Produto produtoCriado = produtoService.criar(produto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(produtoCriado);
+    public ResponseEntity<Produto> criarProduto(@Valid @RequestBody Produto produto) {
+        Produto novoProduto = produtoService.criarProduto(produto);
+        return new ResponseEntity<>(novoProduto, HttpStatus.CREATED);
     }
 
+    // Buscar um produto por ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Produto> buscarProdutoPorId(@PathVariable Long id) {
+        try {
+            Produto produto = produtoService.buscarProdutoPorId(id);
+            return new ResponseEntity<>(produto, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // Listar todos os produtos
+    @GetMapping
+    public ResponseEntity<Iterable<Produto>> listarProdutos() {
+        Iterable<Produto> produtos = produtoService.listarProdutos();
+        return new ResponseEntity<>(produtos, HttpStatus.OK);
+    }
+
+    // Atualizar um produto existente
     @PutMapping("/{id}")
-    public ResponseEntity<Produto> atualizar(@PathVariable Long id, @Valid @RequestBody Produto produto) {
+    public ResponseEntity<Produto> atualizarProduto(
+            @PathVariable Long id,
+            @Valid @RequestBody Produto produtoAtualizado) {
         try {
-            Produto produtoAtualizado = produtoService.atualizar(id, produto);
-            return ResponseEntity.ok(produtoAtualizado);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            Produto produto = produtoService.atualizarProduto(id, produtoAtualizado);
+            return new ResponseEntity<>(produto, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
+    // Deletar um produto
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> excluir(@PathVariable Long id) {
+    public ResponseEntity<Void> deletarProduto(@PathVariable Long id) {
         try {
-            produtoService.excluir(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("O produto não pode ser excluído porque está associado a uma Venda.");
+            produtoService.deletarProduto(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-
 
     @PatchMapping("/{id}/inativar")
     public ResponseEntity<Void> inativar(@PathVariable Long id) {

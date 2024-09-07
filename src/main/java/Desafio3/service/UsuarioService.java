@@ -1,9 +1,9 @@
 package Desafio3.service;
 
-import Desafio3.UsuarioNaoEncontradoException;
 import Desafio3.model.Usuario;
 import Desafio3.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,11 +15,48 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
     public Usuario criarUsuario(Usuario usuario) {
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         return usuarioRepository.save(usuario);
     }
 
-    public List<Usuario> listarTodosUsuarios() {
+    public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            usuario.setNome(usuarioAtualizado.getNome());
+            usuario.setEmail(usuarioAtualizado.getEmail());
+            usuario.setTipo(usuarioAtualizado.getTipo());
+            if (usuarioAtualizado.getSenha() != null && !usuarioAtualizado.getSenha().isBlank()) {
+                usuario.setSenha(passwordEncoder.encode(usuarioAtualizado.getSenha()));
+            }
+            return usuarioRepository.save(usuario);
+        }
+        return null; // ou lançar uma exceção
+    }
+
+    public boolean autenticar(String email, String senha) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            return passwordEncoder.matches(senha, usuario.getSenha()) && usuario.getTipo() == Usuario.TipoUsuario.ADMIN;
+        }
+        return false;
+    }
+
+    public void resetarSenha(Long id, String novaSenha) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            usuario.setSenha(passwordEncoder.encode(novaSenha));
+            usuarioRepository.save(usuario);
+        }
+    }
+
+    public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
     }
 
@@ -27,41 +64,7 @@ public class UsuarioService {
         return usuarioRepository.findById(id);
     }
 
-    public Optional<Usuario> buscarPorEmail(String email) {
-        return usuarioRepository.findByEmail(email);
-    }
-
-    public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com id: " + id));
-        usuario.setNome(usuarioAtualizado.getNome());
-        usuario.setEmail(usuarioAtualizado.getEmail());
-        return usuarioRepository.save(usuario);
-    }
-
     public void deletarUsuario(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com id: " + id));
-        usuarioRepository.delete(usuario);
-    }
-
-    public boolean autenticarUsuario(String email, String senha) {
-        Optional<Usuario> usuario = usuarioRepository.findByEmail(email);
-        if (usuario.isPresent()) {
-            Usuario u = usuario.get();
-            if (u.getSenha().equals(senha)) {
-                u.setAutenticado("sim");
-                usuarioRepository.save(u);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void redefinirSenha(Long id, String novaSenha) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com id: " + id));
-        usuario.setSenha(novaSenha);
-        usuarioRepository.save(usuario);
+        usuarioRepository.deleteById(id);
     }
 }

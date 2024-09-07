@@ -2,55 +2,44 @@ package Desafio3.controller;
 
 import Desafio3.model.Estoque;
 import Desafio3.service.EstoqueService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-
 @RestController
-@RequestMapping("/api/estoques")
+@RequestMapping("/estoques")
 public class EstoqueController {
 
     @Autowired
     private EstoqueService estoqueService;
 
-    @GetMapping
-    public ResponseEntity<List<Estoque>> listarTodos() {
-        List<Estoque> estoques = estoqueService.listarTodos();
-        return ResponseEntity.ok(estoques);
+    // Criar ou atualizar movimentação de estoque
+    @PostMapping
+    public ResponseEntity<Estoque> criarOuAtualizarEstoque(@RequestBody Estoque estoque) {
+        try {
+            Estoque estoqueSalvo = estoqueService.criarOuAtualizarEstoque(estoque);
+            return ResponseEntity.ok(estoqueSalvo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
+    // Buscar movimentação de estoque por ID
     @GetMapping("/{id}")
     public ResponseEntity<Estoque> buscarPorId(@PathVariable Long id) {
-        Optional<Estoque> estoque = estoqueService.buscarPorId(id);
-        return estoque.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public ResponseEntity<Estoque> criar(@Valid @RequestBody Estoque estoque) {
-        Estoque estoqueCriado = estoqueService.criar(estoque);
-        return ResponseEntity.status(HttpStatus.CREATED).body(estoqueCriado);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Estoque> atualizar(@PathVariable Long id, @Valid @RequestBody Estoque estoque) {
         try {
-            Estoque estoqueAtualizado = estoqueService.atualizar(id, estoque);
-            return ResponseEntity.ok(estoqueAtualizado);
+            Estoque estoque = estoqueService.buscarPorId(id);
+            return ResponseEntity.ok(estoque);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
+    // Remover movimentação de estoque por ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    public ResponseEntity<Void> removerPorId(@PathVariable Long id) {
         try {
-            estoqueService.excluir(id);
+            estoqueService.removerPorId(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();

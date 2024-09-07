@@ -2,25 +2,28 @@ package Desafio3.controller;
 
 import Desafio3.model.Venda;
 import Desafio3.service.VendaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
-@RequestMapping("/vendas")
+@RequestMapping("/api/vendas")
 public class VendaController {
 
     @Autowired
     private VendaService vendaService;
 
     @PostMapping
-    public ResponseEntity<?> criarVenda(@RequestBody Venda venda) {
+    public ResponseEntity<Venda> criarVenda(@RequestBody @Valid Venda venda) {
         try {
-            vendaService.criarVenda(venda);
-            return ResponseEntity.ok("Venda criada com sucesso.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            Venda novaVenda = vendaService.criarVenda(venda);
+            return new ResponseEntity<>(novaVenda, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -29,28 +32,34 @@ public class VendaController {
         try {
             Venda venda = vendaService.buscarVendaPorId(id);
             return new ResponseEntity<>(venda, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
 
+    @GetMapping
+    public ResponseEntity<Iterable<Venda>> listarVendas() {
+        Iterable<Venda> vendas = vendaService.listarVendas();
+        return new ResponseEntity<>(vendas, HttpStatus.OK);
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarVenda(@PathVariable Long id, @RequestBody Venda venda) {
+    public ResponseEntity<Venda> atualizarVenda(@PathVariable Long id, @RequestBody @Valid Venda vendaAtualizada) {
         try {
-            Venda vendaAtualizada = vendaService.atualizarVenda(id, venda);
-            return new ResponseEntity<>(vendaAtualizada, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            Venda venda = vendaService.atualizarVenda(id, vendaAtualizada);
+            return new ResponseEntity<>(venda, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarVenda(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deletarVenda(@PathVariable Long id) {
         try {
             vendaService.deletarVenda(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(Map.of("message", "Venda deletada com sucesso."), HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(Map.of("message", e.getMessage()), HttpStatus.NOT_FOUND);
         }
     }
 }

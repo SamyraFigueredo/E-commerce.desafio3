@@ -1,19 +1,17 @@
 package Desafio3.controller;
 
-import Desafio3.UsuarioNaoEncontradoException;
 import Desafio3.model.Usuario;
 import Desafio3.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 public class UsuarioController {
 
     @Autowired
@@ -21,77 +19,49 @@ public class UsuarioController {
 
     @PostMapping
     public ResponseEntity<Usuario> criarUsuario(@RequestBody Usuario usuario) {
-        try {
-            Usuario novoUsuario = usuarioService.criarUsuario(usuario);
-            return new ResponseEntity<>(novoUsuario, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        Usuario usuarioCriado = usuarioService.criarUsuario(usuario);
+        return new ResponseEntity<>(usuarioCriado, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Usuario> atualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioAtualizado) {
+        Usuario usuario = usuarioService.atualizarUsuario(id, usuarioAtualizado);
+        if (usuario != null) {
+            return new ResponseEntity<>(usuario, HttpStatus.OK);
         }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @PostMapping("/autenticar")
+    public ResponseEntity<Boolean> autenticar(@RequestParam String email, @RequestParam String senha) {
+        boolean autenticado = usuarioService.autenticar(email, senha);
+        return new ResponseEntity<>(autenticado, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}/resetar-senha")
+    public ResponseEntity<Void> resetarSenha(@PathVariable Long id, @RequestParam String novaSenha) {
+        usuarioService.resetarSenha(id, novaSenha);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Usuario>> listarUsuarios() {
+        List<Usuario> usuarios = usuarioService.listarUsuarios();
+        return new ResponseEntity<>(usuarios, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> buscarUsuarioPorId(@PathVariable Long id) {
-        Optional<Usuario> usuario = usuarioService.buscarUsuarioPorId(id);
-        return usuario.map(u -> new ResponseEntity<>(u, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Usuario>> listarTodosUsuarios() {
-        List<Usuario> usuarios = usuarioService.listarTodosUsuarios();
-        return new ResponseEntity<>(usuarios, HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Usuario> atualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
-        try {
-            Usuario usuarioAtualizado = usuarioService.atualizarUsuario(id, usuario);
-            return new ResponseEntity<>(usuarioAtualizado, HttpStatus.OK);
-        } catch (UsuarioNaoEncontradoException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        Optional<Usuario> usuarioOpt = usuarioService.buscarUsuarioPorId(id);
+        if (usuarioOpt.isPresent()) {
+            return new ResponseEntity<>(usuarioOpt.get(), HttpStatus.OK);
         }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarUsuario(@PathVariable Long id) {
-        try {
-            usuarioService.deletarUsuario(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (UsuarioNaoEncontradoException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @PostMapping("/autenticar")
-    public ResponseEntity<String> autenticarUsuario(@RequestParam String email, @RequestParam String senha) {
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        Optional<Usuario> usuarioOpt = usuarioService.buscarPorEmail(email);
-
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            if (passwordEncoder.matches(senha, usuario.getSenha())) {
-                usuario.setAutenticado("sim");
-                usuarioService.criarUsuario(usuario);
-                return new ResponseEntity<>("Autenticação feita com sucesso", HttpStatus.OK);
-            }
-        }
-        return new ResponseEntity<>("Autenticação falhou", HttpStatus.UNAUTHORIZED);
-    }
-
-
-    @PostMapping("/{id}/resetar-senha")
-    public ResponseEntity<Void> redefinirSenha(@PathVariable Long id, @RequestParam String novaSenha) {
-        try {
-            usuarioService.redefinirSenha(id, novaSenha);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (UsuarioNaoEncontradoException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        usuarioService.deletarUsuario(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
