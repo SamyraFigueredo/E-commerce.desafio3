@@ -5,8 +5,8 @@ import Desafio3.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -18,53 +18,64 @@ public class UsuarioService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    @Transactional
     public Usuario criarUsuario(Usuario usuario) {
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        if (usuarioRepository.findByEmail(usuario.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("E-mail já cadastrado.");
+        }
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha())); // Criptografa a senha
         return usuarioRepository.save(usuario);
     }
 
-    public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            usuario.setNome(usuarioAtualizado.getNome());
-            usuario.setEmail(usuarioAtualizado.getEmail());
-            usuario.setTipo(usuarioAtualizado.getTipo());
-            if (usuarioAtualizado.getSenha() != null && !usuarioAtualizado.getSenha().isBlank()) {
-                usuario.setSenha(passwordEncoder.encode(usuarioAtualizado.getSenha()));
-            }
-            return usuarioRepository.save(usuario);
+    public Optional<Usuario> buscarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email);
+    }
+
+    @Transactional
+    public Usuario atualizarUsuario(Usuario usuario) {
+        Optional<Usuario> usuarioExistente = usuarioRepository.findById(usuario.getId());
+        if (usuarioExistente.isEmpty()) {
+            throw new IllegalArgumentException("Usuário não encontrado.");
         }
-        return null; // ou lançar uma exceção
+
+        if (!usuario.getSenha().equals(usuarioExistente.get().getSenha())) {
+            usuario.setSenha(passwordEncoder.encode(usuario.getSenha())); // Criptografa a nova senha
+        }
+        return usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void deletarUsuario(Long id) {
+        Optional<Usuario> usuarioExistente = usuarioRepository.findById(id);
+        if (usuarioExistente.isEmpty()) {
+            throw new IllegalArgumentException("Usuário não encontrado.");
+        }
+        usuarioRepository.deleteById(id);
     }
 
     public boolean autenticar(String email, String senha) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            return passwordEncoder.matches(senha, usuario.getSenha()) && usuario.getTipo() == Usuario.TipoUsuario.ADMIN;
+        Optional<Usuario> usuarioOptional = usuarioRepository.findByEmail(email);
+        if (usuarioOptional.isPresent()) {
+            Usuario usuario = usuarioOptional.get();
+            boolean senhaCorreta = passwordEncoder.matches(senha, usuario.getSenha());
+            if (senhaCorreta) {
+                usuario.setAutenticado(true);
+                usuarioRepository.save(usuario);
+                return true;
+            }
         }
         return false;
     }
 
-    public void resetarSenha(Long id, String novaSenha) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
+    public void resetarSenha(String email, String novaSenha) {
+        Optional<Usuario> usuarioOptional = usuarioRepository.findByEmail(email);
+        if (usuarioOptional.isPresent()) {
+            Usuario usuario = usuarioOptional.get();
             usuario.setSenha(passwordEncoder.encode(novaSenha));
+            usuario.setAutenticado(false);
             usuarioRepository.save(usuario);
+        } else {
+            throw new IllegalArgumentException("Usuário não encontrado");
         }
-    }
-
-    public List<Usuario> listarUsuarios() {
-        return usuarioRepository.findAll();
-    }
-
-    public Optional<Usuario> buscarUsuarioPorId(Long id) {
-        return usuarioRepository.findById(id);
-    }
-
-    public void deletarUsuario(Long id) {
-        usuarioRepository.deleteById(id);
     }
 }
