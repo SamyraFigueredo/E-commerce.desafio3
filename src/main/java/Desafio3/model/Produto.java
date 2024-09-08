@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -37,18 +38,29 @@ public class Produto {
     @NotNull(message = "O status ativo do produto é obrigatório")
     private Boolean ativo;
 
-    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Estoque> movimentacoesEstoque;
+    @OneToMany(mappedBy = "produto")
+    private List<ItemVenda> itensVenda;
 
-    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL)
-    private List<Venda> vendas;
+    @Column(nullable = false)
+    private LocalDateTime dataItemVenda;
 
+    @PrePersist
+    public void prePersist() {
+        this.dataItemVenda = LocalDateTime.now();
+    }
+
+    // Validação do produto
     public void validar() {
         if (estoque < 0) {
-            throw new IllegalArgumentException("O estoque não pode ser negativo");
+            throw new IllegalArgumentException("O estoque não pode ser negativo.");
         }
         if (preco < 0) {
-            throw new IllegalArgumentException("O preço não pode ser negativo");
+            throw new IllegalArgumentException("O preço não pode ser negativo.");
         }
+    }
+
+    // Método para inativar produto
+    public void inativar() {
+        this.ativo = false;
     }
 }

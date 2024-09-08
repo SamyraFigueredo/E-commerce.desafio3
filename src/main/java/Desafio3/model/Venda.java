@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @Entity
 @Table(name = "venda")
@@ -25,53 +24,51 @@ public class Venda {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime dataVenda;
+    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonIgnore
+    private List<ItemVenda> itensVenda;
 
-    @ElementCollection
-    @CollectionTable(name = "produto_venda", joinColumns = @JoinColumn(name = "venda_id"))
-    @MapKeyJoinColumn(name = "produto_id")
-    @Column(name = "quantidade")
-    private Map<Produto, Integer> produtos = new HashMap<>();
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime dataItemVenda;
 
     @PrePersist
     public void prePersist() {
-        this.dataVenda = LocalDateTime.now();
+        this.dataItemVenda = LocalDateTime.now();
     }
 
-    // Método de validação
     public void validar() {
         if (usuario == null || usuario.getId() == null) {
             throw new IllegalArgumentException("Usuário não pode ser nulo e deve ter um ID válido.");
         }
-        if (produtos == null || produtos.isEmpty()) {
-            throw new IllegalArgumentException("A venda deve conter pelo menos um produto.");
+        if (itensVenda == null || itensVenda.isEmpty()) {
+            throw new IllegalArgumentException("A venda deve conter pelo menos um item.");
         }
-        for (Map.Entry<Produto, Integer> entry : produtos.entrySet()) {
-            Produto produto = entry.getKey();
-            Integer quantidade = entry.getValue();
+
+        for (ItemVenda item : itensVenda) {
+            Produto produto = item.getProduto();
             if (produto == null || produto.getId() == null) {
-                throw new IllegalArgumentException("Cada produto de venda deve ser válido.");
+                throw new IllegalArgumentException("Cada item de venda deve ter um produto válido.");
             }
-            if (quantidade == null || quantidade <= 0) {
-                throw new IllegalArgumentException("A quantidade de cada produto deve ser maior que zero.");
+            if (item.getQuantidade() == null || item.getQuantidade() <= 0) {
+                throw new IllegalArgumentException("A quantidade de cada item de venda deve ser maior que zero.");
             }
-            if (quantidade > produto.getEstoque()) {
+            if (item.getPrecoUnitario() == null || item.getPrecoUnitario() <= 0) {
+                throw new IllegalArgumentException("O preço unitário de cada item de venda deve ser maior que zero.");
+            }
+
+            // Verifica se há estoque suficiente para cada item vendido
+            if (produto.getEstoque() < item.getQuantidade()) {
                 throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getNome());
             }
         }
     }
 
-    // Atualizar o estoque dos produtos após a venda
+    // Atualiza o estoque dos produtos com base na venda
     public void atualizarEstoque() {
-        for (Map.Entry<Produto, Integer> entry : produtos.entrySet()) {
-            Produto produto = entry.getKey();
-            Integer quantidade = entry.getValue();
+        for (ItemVenda item : itensVenda) {
+            Produto produto = item.getProduto();
             if (produto != null) {
-                if (produto.getEstoque() < quantidade) {
-                    throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getNome());
-                }
-                produto.setEstoque(produto.getEstoque() - quantidade);
+                produto.setEstoque(produto.getEstoque() - item.getQuantidade());
             }
         }
     }

@@ -4,7 +4,6 @@ import Desafio3.model.Estoque;
 import Desafio3.repository.EstoqueRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -14,30 +13,24 @@ public class EstoqueService {
     @Autowired
     private EstoqueRepository estoqueRepository;
 
-    @Autowired
-    private ProdutoService produtoService;
-
-    // Criar ou atualizar movimentação de estoque
-    @Transactional
-    public Estoque criarOuAtualizarEstoque(Estoque estoque) {
-        // Atualizar o estoque do produto
-        estoque.atualizarEstoque();
-        // Salvar a movimentação de estoque
+    public Estoque criarMovimentacao(Estoque estoque) {
+        estoque.atualizarEstoque(); // Atualiza o estoque com base na movimentação
         return estoqueRepository.save(estoque);
     }
 
-    // Buscar movimentação de estoque por ID
     public Estoque buscarPorId(Long id) {
-        Optional<Estoque> estoque = estoqueRepository.findById(id);
-        if (estoque.isEmpty()) {
-            throw new IllegalArgumentException("Movimentação de estoque não encontrada.");
-        }
-        return estoque.get();
+        return estoqueRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Movimentação não encontrada"));
     }
 
-    // Remover movimentação de estoque por ID
-    @Transactional
-    public void removerPorId(Long id) {
-        estoqueRepository.deleteById(id);
+    public Estoque atualizarMovimentacao(Long id, Estoque estoqueAtualizado) {
+        Estoque estoqueExistente = buscarPorId(id);
+        estoqueAtualizado.setId(id);
+        estoqueAtualizado.atualizarEstoque(); // Atualiza o estoque com base na movimentação
+        return estoqueRepository.save(estoqueAtualizado);
+    }
+
+    public void excluirMovimentacao(Long id) {
+        Estoque estoqueExistente = buscarPorId(id);
+        estoqueRepository.delete(estoqueExistente);
     }
 }

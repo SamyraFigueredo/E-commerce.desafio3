@@ -2,64 +2,50 @@ package Desafio3.controller;
 
 import Desafio3.model.Venda;
 import Desafio3.service.VendaService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/vendas")
+@RequestMapping("/vendas")
 public class VendaController {
 
     @Autowired
     private VendaService vendaService;
 
     @PostMapping
-    public ResponseEntity<Venda> criarVenda(@RequestBody @Valid Venda venda) {
+    public ResponseEntity<Venda> criarVenda(@RequestBody Venda venda) {
         try {
             Venda novaVenda = vendaService.criarVenda(venda);
-            return new ResponseEntity<>(novaVenda, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return ResponseEntity.ok(novaVenda);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null); // Retorna erro de validação
         }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Venda> buscarVendaPorId(@PathVariable Long id) {
-        try {
-            Venda venda = vendaService.buscarVendaPorId(id);
-            return new ResponseEntity<>(venda, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        }
+        Optional<Venda> venda = vendaService.buscarPorId(id);
+        return venda.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping
-    public ResponseEntity<Iterable<Venda>> listarVendas() {
-        Iterable<Venda> vendas = vendaService.listarVendas();
-        return new ResponseEntity<>(vendas, HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Venda> atualizarVenda(@PathVariable Long id, @RequestBody @Valid Venda vendaAtualizada) {
-        try {
-            Venda venda = vendaService.atualizarVenda(id, vendaAtualizada);
-            return new ResponseEntity<>(venda, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity<List<Venda>> listarTodas() {
+        List<Venda> vendas = vendaService.listarTodas();
+        return ResponseEntity.ok(vendas);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deletarVenda(@PathVariable Long id) {
-        try {
+    public ResponseEntity<Void> deletarVenda(@PathVariable Long id) {
+        Optional<Venda> venda = vendaService.buscarPorId(id);
+        if (venda.isPresent()) {
             vendaService.deletarVenda(id);
-            return new ResponseEntity<>(Map.of("message", "Venda deletada com sucesso."), HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(Map.of("message", e.getMessage()), HttpStatus.NOT_FOUND);
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
         }
     }
 }
