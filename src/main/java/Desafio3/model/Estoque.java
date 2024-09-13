@@ -1,66 +1,48 @@
 package Desafio3.model;
 
+
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import lombok.Builder;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
-@Entity
-@Table(name = "estoque")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "estoques")
 public class Estoque {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "A quantidade é obrigatória")
-    @Min(value = 0, message = "A quantidade deve ser no mínimo 0")
-    private Integer quantidade;
-
-    @NotNull(message = "A data de movimentação é obrigatória")
-    private LocalDateTime dataMovimentacao;
-
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "produto_id", nullable = false)
-    @JsonBackReference
     private Produto produto;
 
-    @NotNull(message = "O tipo de movimentação é obrigatório")
-    @Enumerated(EnumType.STRING)
-    private TipoMovimentacao tipoMovimentacao;
+    private int quantidadeDisponivel;
 
-    public enum TipoMovimentacao {
-        ENTRADA,
-        SAIDA
+    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL)
+    private List<Venda> vendas;
+
+    public int getTotalVendas() {
+        return vendas != null ? vendas.size() : 0;
     }
 
-    @PrePersist
-    public void prePersist() {
-        this.dataMovimentacao = LocalDateTime.now();
+    public void adicionarEstoque(int quantidade) {
+        this.quantidadeDisponivel += quantidade;
     }
 
-    // Atualiza o estoque do produto com base na movimentação
-    public void atualizarEstoque() {
-        if (produto != null) {
-            switch (tipoMovimentacao) {
-                case ENTRADA:
-                    produto.setEstoque(produto.getEstoque() + quantidade);
-                    break;
-                case SAIDA:
-                    produto.setEstoque(produto.getEstoque() - quantidade);
-                    if (produto.getEstoque() < 0) {
-                        throw new IllegalArgumentException("Estoque não pode ser negativo após a saída.");
-                    }
-                    break;
-            }
+    public boolean reduzirEstoque(int quantidade) {
+        if (quantidadeDisponivel >= quantidade) {
+            this.quantidadeDisponivel -= quantidade;
+            return true;
         }
+        return false;
     }
 }

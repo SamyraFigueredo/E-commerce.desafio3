@@ -7,30 +7,45 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+
 @Service
 public class EstoqueService {
 
     @Autowired
     private EstoqueRepository estoqueRepository;
 
-    public Estoque criarMovimentacao(Estoque estoque) {
-        estoque.atualizarEstoque(); // Atualiza o estoque com base na movimentação
+    public Estoque buscarPorProduto(Long produtoId) {
+        return estoqueRepository.findByProdutoId(produtoId);
+    }
+
+    public Estoque encontrarPorProdutoId(Long produtoId) {
+        return estoqueRepository.findByProdutoId(produtoId);
+    }
+
+    public Estoque salvar(Estoque estoque) {
         return estoqueRepository.save(estoque);
     }
 
-    public Estoque buscarPorId(Long id) {
-        return estoqueRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Movimentação não encontrada"));
+    public Optional<Estoque> encontrarPorId(Long id) {
+        return estoqueRepository.findById(id);
     }
 
-    public Estoque atualizarMovimentacao(Long id, Estoque estoqueAtualizado) {
-        Estoque estoqueExistente = buscarPorId(id);
-        estoqueAtualizado.setId(id);
-        estoqueAtualizado.atualizarEstoque(); // Atualiza o estoque com base na movimentação
-        return estoqueRepository.save(estoqueAtualizado);
+    public void adicionarEstoque(Long produtoId, int quantidade) {
+        Estoque estoque = estoqueRepository.findByProdutoId(produtoId);
+        estoque.adicionarEstoque(quantidade);
+        estoqueRepository.save(estoque);
     }
 
-    public void excluirMovimentacao(Long id) {
-        Estoque estoqueExistente = buscarPorId(id);
-        estoqueRepository.delete(estoqueExistente);
+    public void reduzirEstoque(Long produtoId, int quantidade) {
+        Estoque estoque = estoqueRepository.findByProdutoId(produtoId);
+        if (estoque.reduzirEstoque(quantidade)) {
+            estoqueRepository.save(estoque);
+        } else {
+            throw new IllegalArgumentException("Estoque insuficiente.");
+        }
+    }
+
+    public void deletarPorId(Long id) {
+        estoqueRepository.deleteById(id);
     }
 }

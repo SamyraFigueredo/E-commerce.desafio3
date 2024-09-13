@@ -2,11 +2,11 @@ package Desafio3.controller;
 
 import Desafio3.model.Usuario;
 import Desafio3.service.UsuarioService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -16,52 +16,44 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-    @PostMapping
-    public ResponseEntity<Usuario> criarUsuario(@RequestBody Usuario usuario) {
-        Usuario novoUsuario = usuarioService.criarUsuario(usuario);
-        return ResponseEntity.ok(novoUsuario);
+    @GetMapping
+    public List<Usuario> listarTodos() {
+        return usuarioService.listarTodos();
     }
 
-    @GetMapping("/{email}")
-    public ResponseEntity<Usuario> buscarPorEmail(@PathVariable String email) {
-        Optional<Usuario> usuario = usuarioService.buscarPorEmail(email);
+    @GetMapping("/{id}")
+    public ResponseEntity<Usuario> encontrarPorId(@PathVariable Long id) {
+        Optional<Usuario> usuario = usuarioService.encontrarPorId(id);
         return usuario.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarUsuario(@PathVariable Long id, @Valid @RequestBody Usuario usuario) {
-        try {
-            usuario.setId(id);
-            Usuario usuarioAtualizado = usuarioService.atualizarUsuario(usuario);
-            return ResponseEntity.ok(usuarioAtualizado);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    @GetMapping("/username/{username}")
+    public ResponseEntity<Usuario> encontrarPorUsername(@PathVariable String username) {
+        Usuario usuario = usuarioService.encontrarPorUsername(username);
+        return usuario != null ? ResponseEntity.ok(usuario) : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/email/{email}")
+    public ResponseEntity<Usuario> encontrarPorEmail(@PathVariable String email) {
+        Usuario usuario = usuarioService.encontrarPorEmail(email);
+        return usuario != null ? ResponseEntity.ok(usuario) : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping
+    public Usuario criarUsuario(@RequestBody Usuario usuario) {
+        return usuarioService.salvar(usuario);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarUsuario(@PathVariable Long id) {
-        try {
-            usuarioService.deletarUsuario(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deletarPorId(@PathVariable Long id) {
+        usuarioService.deletarPorId(id);
+        return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/autenticar")
-    public ResponseEntity<String> autenticar(@RequestParam String email, @RequestParam String senha) {
-        boolean autenticado = usuarioService.autenticar(email, senha);
-        return autenticado ? ResponseEntity.ok("Autenticado com sucesso") : ResponseEntity.status(401).body("Credenciais inválidas");
-    }
+//    @PostMapping("/resetar-senha")
+//    public ResponseEntity<Void> resetarSenha(@RequestBody String email) {
+//        usuarioService.resetarSenha(email);
+//        return ResponseEntity.ok().build();
+//    }
 
-    @PostMapping("/resetar-senha")
-    public ResponseEntity<?> resetarSenha(@RequestParam String email, @RequestParam String novaSenha) {
-        try {
-            usuarioService.resetarSenha(email, novaSenha);
-            return ResponseEntity.ok("Senha redefinida com sucesso");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
 }

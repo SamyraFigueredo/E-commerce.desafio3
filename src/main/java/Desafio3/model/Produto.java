@@ -1,66 +1,50 @@
 package Desafio3.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
-@Entity
-@Table(name = "produto")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "produtos")
 public class Produto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "O nome do produto é obrigatório")
+    @NotNull(message = "Nome não pode ser nulo")
+    @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
     private String nome;
 
+    @Column(length = 500)
     private String descricao;
 
-    @NotNull(message = "O preço do produto é obrigatório")
-    @Min(value = 0, message = "O preço deve ser positivo")
-    private Double preco;
+    @NotNull(message = "Preço não pode ser nulo")
+    @Positive(message = "O preço deve ser positivo")
+    private BigDecimal preco;
 
-    @NotNull(message = "O estoque do produto é obrigatório")
-    @Min(value = 0, message = "O estoque deve ser no mínimo 0")
-    private Integer estoque;
+    @Column(name = "data_criacao")
+    private LocalDateTime dataCriacao;
 
-    @NotNull(message = "O status ativo do produto é obrigatório")
-    private Boolean ativo;
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
-    @OneToMany(mappedBy = "produto")
-    private List<ItemVenda> itensVenda;
+    private int estoque;
 
-    @Column(nullable = false)
-    private LocalDateTime dataItemVenda;
-
-    @PrePersist
-    public void prePersist() {
-        this.dataItemVenda = LocalDateTime.now();
-    }
-
-    // Validação do produto
-    public void validar() {
-        if (estoque < 0) {
-            throw new IllegalArgumentException("O estoque não pode ser negativo.");
-        }
-        if (preco < 0) {
-            throw new IllegalArgumentException("O preço não pode ser negativo.");
-        }
-    }
-
-    // Método para inativar produto
-    public void inativar() {
-        this.ativo = false;
+    public enum Status {
+        ATIVO, INATIVO
     }
 }
+

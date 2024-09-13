@@ -1,68 +1,48 @@
 package Desafio3.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.Builder;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Entity
-@Table(name = "usuario")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@Entity
+@Table(name = "usuarios")
 public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Email
-    @NotBlank
-    @Column(nullable = false, unique = true)
+    @NotEmpty(message = "Username é obrigatório")
+    private String username;
+
+    @Email(message = "Email deve ser válido")
+    @NotEmpty(message = "Email é obrigatório")
     private String email;
 
-    @NotBlank
-    @Column(nullable = false)
-    private String nome;
-
-    // A senha deve ser salva em formato hash
-    @NotBlank
-    @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres.")
-    @Column(nullable = false)
+    @NotEmpty(message = "Senha é obrigatória")
     private String senha;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TipoUsuario tipo;
+    private Role role;
 
-    @NotNull
-    @Column(nullable = false)
-    private Boolean autenticado = false; // Campo adicional para status de autenticação
+    @Transient // Campo não persistido no banco
+    private String autenticado;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
-    @JsonBackReference
-    private List<Venda> vendas;
+    public String getAutenticado() {
+        return autenticado != null && autenticado.equalsIgnoreCase("sim") ? "sim" : null;
+    }
 
-    // Campos para auditoria
-    @CreationTimestamp
-    @Column(updatable = false)
-    private LocalDateTime dataCriacao;
-
-    @UpdateTimestamp
-    private LocalDateTime dataAtualizacao;
-
-    // Enum que define os tipos possíveis de usuário
-    public enum TipoUsuario {
-        ADMIN, USER
+    public enum Role {
+        USER, ADMIN
     }
 }
+
